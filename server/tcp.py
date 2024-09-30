@@ -10,5 +10,5 @@ class TCPServer():
 		self.sock.listen(self.config["backlog"])
 		while True:
 			data, addr = self.sock.accept()
-			print(f"Received {data} from {addr}")
-			self.sock.send(data)
+			print(f"Received {data.decode()} from {addr}")
+			# self.sock.send(data)
