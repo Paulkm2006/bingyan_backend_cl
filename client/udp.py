@@ -8,4 +8,4 @@ class UDPClient():
 
 	def send(self, data):
 		self.sock.sendto(data, (self.addr, self.port))
-		return self.sock.recv(1024)
+		self.resp = self.sock.recv(1024)
