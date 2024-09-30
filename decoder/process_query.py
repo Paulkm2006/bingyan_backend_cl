@@ -72,11 +72,64 @@ class DNSQuery:
             cur+=8
             rdlength = int(query[cur : cur + 4], 16)
             cur+=4
-            rdata = ""
-            for j in range(rdlength):
-                rdata += str(int(query[cur : cur + 2], 16))+"."
-                cur += 2
-            ret["answers"].append({"name": qname, "type": typ, "class": cls, "ttl": ttl, "rdlength": rdlength, "rdata": rdata})
+            if typ == 1: # A
+                rdata = ""
+                for j in range(rdlength):
+                    rdata += str(int(query[cur : cur + 2], 16))+"."
+                    cur += 2
+                    ret["answers"].append(
+                        {
+                            "name": qname,
+                            "type": typ,
+                            "class": cls,
+                            "ttl": ttl,
+                            "rdlength": rdlength,
+                            "rdata": rdata,
+                        }
+                    )
+                    cur -= 2  # fix for multiple records
+            elif typ == 15: # MX
+                pref = int(query[cur : cur + 4], 16)
+                cur+=4
+                exchange = ""
+                while True:
+                    length = int(query[cur : cur + 2], 16)
+                    if length == 0:
+                        break
+                    elif length == 192: #C0 pointer
+                        cur += 2
+                        offset = int(query[cur : cur+2], 16)*2 -2
+                        while True:
+                            offset += 2
+                            length = int(query[offset : offset + 2], 16)
+                            if length == 0:
+                                break
+                            else:
+                                while length > 0:
+                                    offset += 2
+                                    exchange += chr(int(query[offset : offset + 2], 16))
+                                    length -= 1
+                                exchange += "."
+                        break
+                    else:
+                        while length > 0:
+                            cur += 2
+                            exchange += chr(int(query[cur : cur + 2], 16))
+                            length -= 1
+                        cur+=2
+                        exchange += "."
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "pref": pref,
+                        "exchange": exchange,
+                    }
+                )
+
         return ret
 
     def query_info(self):
@@ -97,6 +150,9 @@ class DNSQuery:
         for i in self.query["queries"]:
             print(f"Query: {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
         for i in self.query["answers"]:
-            print(f"Answer: {i['name'][:-1]} {typ[i['type']]}")
-            print(f"  TTL: {i['ttl']}")
-            print(f"  RDATA: {i['rdata']}")
+            if i["type"] == 15:
+                print(f"Answer: {i['name'][:-1]} {typ[i['type']]} \n {i['pref']} {i['exchange']}")
+            elif i["type"] == 1:
+                print(f"Answer: {i['name'][:-1]} {typ[i['type']]}")
+                print(f"  TTL: {i['ttl']}")
+                print(f"  RDATA: {i['rdata']}")
