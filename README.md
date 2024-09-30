@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ## Task2基础任务
 
 ### 1. DNS基础
@@ -89,3 +90,15 @@ usage: `dig <@DNS server> <type> <options> domain`
 [dns数据包](https://fasionchan.com/network/dns/packet-format/)
 
 [dns数据包2](https://cabulous.medium.com/dns-message-how-to-read-query-and-response-message-cfebcb4fe817)
+=======
+## Task1进阶分支
+
+- [x] 命令行支持
+- [x] 发送文件
+- [x] 并发处理
+- [ ] 限制请求频率
+- [ ] 支持POST/GET
+
+参考资料：
+[argparse使用](https://docs.python.org/zh-cn/3/library/argparse.html)
+>>>>>>> 7ed32548719e7eabc3478aa8b484d8d8788e98aa
