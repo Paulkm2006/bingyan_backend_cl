@@ -4,8 +4,54 @@ import bitarray
 class DNSQuery:
     def __init__(self, q):
         self.query_raw = q
+        self.cur = 24
         self.query = self.decode_query()
 
+    def is_ptr(self, hex):
+        ptr = bitarray.bitarray()
+        ptr.frombytes(bytes.fromhex(hex))
+        if ptr[0] == 1 and ptr[1] == 1:
+            offset = int(ptr[2:].to01(), 2)*2
+            return True, offset
+        return False, 0
+    def decode_data_offset(self, query, offset):
+        data = ""
+        while True:
+            length = int(query[offset : offset + 2], 16)
+            if length == 0:
+                break
+            ptr, offset_n = self.is_ptr(query[offset : offset + 4])
+            if ptr:
+                offset += 4
+                data += self.decode_data_offset(query, offset_n)
+                break
+            else:
+                while length > 0:
+                    offset += 2
+                    data += chr(int(query[offset : offset + 2], 16))
+                    length -= 1
+                offset+=2
+                data += "."
+        return data
+    def decode_data(self, query):
+        data = ""
+        while True:
+            length = int(query[self.cur : self.cur + 2], 16)
+            if length == 0:
+                break
+            ptr, offset = self.is_ptr(query[self.cur : self.cur + 4])
+            if ptr:
+                self.cur += 4
+                data += self.decode_data_offset(query, offset)
+                break
+            else:
+                while length > 0:
+                    self.cur += 2
+                    data += chr(int(query[self.cur : self.cur + 2], 16))
+                    length -= 1
+                self.cur+=2
+                data += "."
+        return data
     def decode_query(self):
         query = self.query_raw.hex()
         ret = {}
@@ -27,97 +73,71 @@ class DNSQuery:
         ret["nscount"] = int(query[16:20], 16)
         ret["arcount"] = int(query[20:24], 16)
         ret["queries"] = []
-        cur = 22
         for i in range(ret["qdcount"]):
-            qname = ""
-            while True:
-                cur += 2
-                length = int(query[cur : cur + 2], 16)
-                if length == 0:
-                    break
-                else:
-                    while length > 0:
-                        cur += 2
-                        qname += chr(int(query[cur : cur + 2], 16))
-                        length -= 1
-                    qname += "."
-            typ = int(query[cur + 2 : cur + 6], 16)
-            cls = int(query[cur + 6 : cur + 10], 16)
+            qname = self.decode_data(query)
+            typ = int(query[self.cur + 2 : self.cur + 6], 16)
+            cls = int(query[self.cur + 6 : self.cur + 10], 16)
             ret["queries"].append({"name": qname, "type": typ, "class": cls})
+            self.cur += 10
         ret["answers"] = []
-        cur+=8
         for i in range(ret["ancount"]):
-            cur += 2
-            ptr = bitarray.bitarray()
-            ptr.frombytes(bytes.fromhex(query[cur : cur + 4]))
-            offset = int(ptr[2:].to01(), 2)*2 -2
-            qname = ""
-            while True:
-                offset += 2
-                length = int(query[offset : offset + 2], 16)
-                if length == 0:
-                    break
-                else:
-                    while length > 0:
-                        offset += 2
-                        qname += chr(int(query[offset : offset + 2], 16))
-                        length -= 1
-                    qname += "."
-            cur+=4
-            typ = int(query[cur : cur + 4], 16)
-            cur+=4
-            cls = int(query[cur : cur + 4], 16)
-            cur+=4
-            ttl = int(query[cur : cur + 8], 16)
-            cur+=8
-            rdlength = int(query[cur : cur + 4], 16)
-            cur+=4
+            ptr, offset = self.is_ptr(query[self.cur : self.cur + 4])
+            if ptr:
+                self.cur += 4
+                qname = self.decode_data_offset(query, offset)
+            else:
+                qname = self.decode_data(query)
+            typ = int(query[self.cur : self.cur + 4], 16)
+            self.cur+=4
+            cls = int(query[self.cur : self.cur + 4], 16)
+            self.cur+=4
+            ttl = int(query[self.cur : self.cur + 8], 16)
+            self.cur+=8
+            rdlength = int(query[self.cur : self.cur + 4], 16)
+            self.cur+=4
             if typ == 1: # A
                 rdata = ""
                 for j in range(rdlength):
-                    rdata += str(int(query[cur : cur + 2], 16))+"."
-                    cur += 2
-                    ret["answers"].append(
-                        {
-                            "name": qname,
-                            "type": typ,
-                            "class": cls,
-                            "ttl": ttl,
-                            "rdlength": rdlength,
-                            "rdata": rdata,
-                        }
-                    )
-                    cur -= 2  # fix for multiple records
+                    rdata += str(int(query[self.cur : self.cur + 2], 16))+"."
+                    self.cur += 2
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "rdata": rdata,
+                    }
+                )
+            elif typ == 2: # NS
+                ns = self.decode_data(query)
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "ns": ns,
+                    }
+                )
+            elif typ == 5: # CNAME
+                cname = self.decode_data(query)
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "cname": cname,
+                    }
+                )
             elif typ == 15: # MX
-                pref = int(query[cur : cur + 4], 16)
-                cur+=4
-                exchange = ""
-                while True:
-                    length = int(query[cur : cur + 2], 16)
-                    if length == 0:
-                        break
-                    elif length == 192: #C0 pointer
-                        cur += 2
-                        offset = int(query[cur : cur+2], 16)*2 -2
-                        while True:
-                            offset += 2
-                            length = int(query[offset : offset + 2], 16)
-                            if length == 0:
-                                break
-                            else:
-                                while length > 0:
-                                    offset += 2
-                                    exchange += chr(int(query[offset : offset + 2], 16))
-                                    length -= 1
-                                exchange += "."
-                        break
-                    else:
-                        while length > 0:
-                            cur += 2
-                            exchange += chr(int(query[cur : cur + 2], 16))
-                            length -= 1
-                        cur+=2
-                        exchange += "."
+                pref = int(query[self.cur : self.cur + 4], 16)
+                self.cur+=4
+                exchange = self.decode_data(query)
                 ret["answers"].append(
                     {
                         "name": qname,
@@ -129,6 +149,28 @@ class DNSQuery:
                         "exchange": exchange,
                     }
                 )
+            elif typ == 16: # TXT
+                rl = rdlength
+                txt = []
+                while rl > 0:
+                    length = int(query[self.cur : self.cur + 2], 16)
+                    self.cur += 2
+                    rl -= 1
+                    label = ""
+                    for j in range(length):
+                        label += chr(int(query[self.cur : self.cur + 2], 16))
+                        self.cur += 2
+                        rl -= 1
+                    txt.append(label)
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "txt": txt,
+                    })
 
         return ret
 
@@ -147,12 +189,19 @@ class DNSQuery:
             255: "ANY",
         }
         cls = {1: "IN", 3: "CH", 4: "HS", 255: "ANY"}
+        id = self.query["id"]
         for i in self.query["queries"]:
-            print(f"Query: {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
+            print(f"Query: ID {id} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
         for i in self.query["answers"]:
-            if i["type"] == 15:
-                print(f"Answer: {i['name'][:-1]} {typ[i['type']]} \n {i['pref']} {i['exchange']}")
-            elif i["type"] == 1:
-                print(f"Answer: {i['name'][:-1]} {typ[i['type']]}")
-                print(f"  TTL: {i['ttl']}")
+            print(f"Answer: ID {id} {i['name'][:-1]} {typ[i['type']]}")
+            print(f"TTL: {i['ttl']}")
+            if i["type"] == 15: # MX
+                print(f"{i['pref']} {i['exchange']}")
+            elif i["type"] == 1: # A
                 print(f"  RDATA: {i['rdata']}")
+            elif i["type"] == 5: # CNAME
+                print(f"  CNAME: {i['cname']}")
+            elif i["type"] == 2: # NS
+                print(f"  NS: {i['ns']}")
+            elif i["type"] == 16: # TXT
+                print(f"  TXT: {i['txt']}")
