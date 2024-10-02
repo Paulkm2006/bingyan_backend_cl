@@ -12,6 +12,3 @@ class DNSResult():
         client = UDPClient(addr=self.addr, port=53)
         client.send(self.query_raw)
         return client.resp
-
-    def __str__(self):
-        return f"{self.answer}"

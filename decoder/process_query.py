@@ -87,6 +87,7 @@ class DNSQuery:
                 qname = self.decode_data_offset(query, offset)
             else:
                 qname = self.decode_data(query)
+                self.cur += 2
             typ = int(query[self.cur : self.cur + 4], 16)
             self.cur+=4
             cls = int(query[self.cur : self.cur + 4], 16)
@@ -152,7 +153,9 @@ class DNSQuery:
             elif typ == 28: # AAAA
                 short = False
                 rdata = ""
+                rdata_orig = ""
                 for i in range(8):
+                    rdata_orig += query[self.cur : self.cur + 4] + ":"
                     chunk = query[self.cur : self.cur + 4]
                     if chunk == "0000":
                         if not short:
@@ -174,6 +177,7 @@ class DNSQuery:
                         "class": cls,
                         "ttl": ttl,
                         "rdlength": rdlength,
+                        "rdata_orig": rdata_orig[:-1],
                         "rdata": rdata[:-1],
                     }
                 )
@@ -199,6 +203,16 @@ class DNSQuery:
                         "rdlength": rdlength,
                         "txt": txt,
                     })
+            else:
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "raw": query[self.cur : self.cur + rdlength*2],
+                    })
 
         return ret
 
@@ -216,16 +230,20 @@ class DNSQuery:
         for i in self.query["queries"]:
             print(f"Query: ID {id} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
         for i in self.query["answers"]:
+            try:
+                t = i["type"]
+            except ValueError:
+                print(f'Error: ID {id} Invalid type {t}')
+                continue
             print(f"\nAnswer: ID {id} {i['name'][:-1]} {typ[i['type']]}")
             print(f"    TTL: {i['ttl']}")
-            if i["type"] == 15: # MX
+            if t == 15: # MX
                 print(f"    PRIORITY: {i['pref']} EXECHANGE: {i['exchange']}")
-            elif i["type"] == 1 or i["type"] == 28: # A or AAAA
+            elif t == 1 or i["type"] == 28: # A or AAAA
                 print(f"    RDATA: {i['rdata']}")
-            elif i["type"] == 5: # CNAME
+            elif t == 5: # CNAME
                 print(f"    CNAME: {i['cname']}")
-            elif i["type"] == 2: # NS
+            elif t == 2: # NS
                 print(f"    NS: {i['ns']}")
-            elif i["type"] == 16: # TXT
+            elif t == 16: # TXT
                 print(f"    TXT: {i['txt']}")
-            print("\n")
