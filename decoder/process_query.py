@@ -2,8 +2,9 @@ import bitarray
 
 
 class DNSQuery:
-    def __init__(self, q):
+    def __init__(self, q, protocol="udp"):
         self.query_raw = q
+        self.protocol = protocol
         self.cur = 24
         self.query = self.decode_query()
 
@@ -55,6 +56,9 @@ class DNSQuery:
     def decode_query(self):
         query = self.query_raw.hex()
         ret = {}
+        if self.protocol == "tcp":
+            ret["length"] = int(query[:4], 16)
+            query = query[4:]
         ret["id"] = query[:4]
         flags = bitarray.bitarray()
         flags.frombytes(bytes.fromhex(query[4:8]))
@@ -228,14 +232,28 @@ class DNSQuery:
         cls = {1: "IN", 3: "CH", 4: "HS", 255: "ANY"}
         id = self.query["id"]
         for i in self.query["queries"]:
-            print(f"Query: ID {id} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
+            print(f"Query: ID {id} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
+        if self.query["flags"]["rcode"] != '0000':
+            err_map = {
+                "0001": "Format error",
+                "0010": "Server failure",
+                "0011": "No such domain",
+                "0100": "Not implemented",
+                "0101": "Refused",
+            }
+            print(
+                f"\nError: ID {id} Protocol {self.protocol} {err_map[self.query['flags']['rcode']]}"
+            )
+            return
         for i in self.query["answers"]:
             try:
                 t = i["type"]
             except ValueError:
-                print(f'Error: ID {id} Invalid type {t}')
+                print(f"Error: ID {id} Protocol {self.protocol} Invalid type {t}")
                 continue
-            print(f"\nAnswer: ID {id} {i['name'][:-1]} {typ[i['type']]}")
+            print(
+                f"\nAnswer: ID {id} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}"
+            )
             print(f"    TTL: {i['ttl']}")
             if t == 15: # MX
                 print(f"    PRIORITY: {i['pref']} EXECHANGE: {i['exchange']}")

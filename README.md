@@ -43,3 +43,13 @@
 
 ![](https://p.sda1.dev/19/884160efc69f227fd93bb063f0adf8e0/image.png)
 
+## Task4 基础&提高
+
+客户端 query.py
+- [x] 可指定服务器、端口
+- [x] 支持指定是否进行递归
+- [x] 支持tcp
+- [x] 解析输出
+- [x] 显示错误
+- [x] 支持A AAAA MX CNAME NS TXT
+- [x] 超时、重试

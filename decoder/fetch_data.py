@@ -1,14 +1,22 @@
 from client.udp import UDPClient
+from client.tcp import TCPClient
 from .process_query import DNSQuery
 
 class DNSResult():
 
-    def __init__(self, query, addr="8.8.8.8"):
+    def __init__(self, query, addr="8.8.8.8", port=53, protocol="udp"):
         self.addr = addr
         self.query_raw = query
-        self.answer = self.forward_request()
+        self.port = port
+        self.protocol = protocol
+        self.forward_request()
 
     def forward_request(self):
-        client = UDPClient(addr=self.addr, port=53)
-        client.send(self.query_raw)
-        return client.resp
+        if self.protocol == "udp":
+            client = UDPClient(addr=self.addr, port=self.port)
+            client.send(self.query_raw)
+        elif self.protocol == "tcp":
+            client = TCPClient(addr=self.addr, port=self.port)
+            length = len(self.query_raw).to_bytes(2, byteorder="big")
+            client.send(length + self.query_raw)
+        self.status, self.answer = client.status, client.resp
