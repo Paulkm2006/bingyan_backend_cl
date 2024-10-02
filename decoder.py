@@ -20,7 +20,7 @@ def main():
     # server = UDPServer(config)
     # for q in server.run():
     #     recv(q)
-    data = DNSGenerator("ip.sb", 1)
+    data = DNSGenerator("hust.edu.cn", 16)
     recv(data.query)
 
         

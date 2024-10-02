@@ -15,8 +15,9 @@ class DNSGenerator:
 
     def generate(self):
         query = b""
-        self.id = hex(randint(0, 65535))[2:]
-        query += bytes.fromhex(self.id)
+        self.id = randint(0, 65535)
+        query += bytes.fromhex(f"{self.id:0{4}x}".format())
+        self.id = f"{self.id:0{4}x}".format()
         if self.rec:
             flags = "0120"
         else:
