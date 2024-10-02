@@ -1,10 +1,11 @@
 from random import randint
 
 class DNSGenerator:
-    def __init__(self, domain, type, recursion_desired=True):
+    def __init__(self, domain, type, recursion_desired=True, flag=None):
         self.domain = domain
         self.type = type
         self.rec = recursion_desired
+        self.flag = flag
         self.generate()
 
     def encode_data(self, data):
@@ -18,10 +19,13 @@ class DNSGenerator:
         self.id = randint(0, 65535)
         query += bytes.fromhex(f"{self.id:0{4}x}".format())
         self.id = f"{self.id:0{4}x}".format()
-        if self.rec:
-            flags = "0120"
+        if self.flag:
+            flags += self.flag
         else:
-            flags = "0020"
+            if self.rec:
+                flags = "0120"
+            else:
+                flags = "0020"
         query += bytes.fromhex(flags)
         query += bytes.fromhex("0001000000000000")
         domain = self.domain.split(".")

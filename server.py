@@ -18,7 +18,8 @@ def main():
 		server = UDPServer(config)
 	else:
 		raise ValueError("Invalid server type")
-	server.run()
+	for i in server.run():
+		pass
 
 if __name__ == "__main__":
 	main()
