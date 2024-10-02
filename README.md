@@ -53,3 +53,10 @@
 - [x] 显示错误
 - [x] 支持A AAAA MX CNAME NS TXT
 - [x] 超时、重试
+
+## Task5 基础&提高
+
+- [x] 接受请求并返回查询结果
+- [x] 可拒绝递归请求
+- [x] 内存cache
+- [x] cache根据ttl自动刷新

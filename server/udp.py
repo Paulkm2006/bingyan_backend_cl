@@ -10,5 +10,5 @@ class UDPServer():
 		print(f"Listening on {self.config['host']}:{self.config['port']}")
 		while True:
 			data, addr = self.sock.recvfrom(1024)
-			print(f"Received {data} from {addr}")
+			# print(f"Received {data} from {addr}")
 			yield data, addr
