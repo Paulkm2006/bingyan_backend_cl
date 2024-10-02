@@ -107,7 +107,7 @@ class DNSQuery:
                         "class": cls,
                         "ttl": ttl,
                         "rdlength": rdlength,
-                        "rdata": rdata,
+                        "rdata": rdata[:-1],
                     }
                 )
             elif typ == 2: # NS
@@ -149,6 +149,34 @@ class DNSQuery:
                         "exchange": exchange,
                     }
                 )
+            elif typ == 28: # AAAA
+                short = False
+                rdata = ""
+                for i in range(8):
+                    chunk = query[self.cur : self.cur + 4]
+                    if chunk == "0000":
+                        if not short:
+                            short = True
+                    else:
+                        if short:
+                            rdata += ':'
+                            short = False
+                        for j in range(4):
+                            if chunk[j] != "0":
+                                rdata += chunk[j:]
+                                break
+                        rdata += ":"
+                    self.cur += 4
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "rdata": rdata[:-1],
+                    }
+                )
             elif typ == 16: # TXT
                 rl = rdlength
                 txt = []
@@ -179,29 +207,25 @@ class DNSQuery:
             1: "A",
             2: "NS",
             5: "CNAME",
-            6: "SOA",
-            12: "PTR",
             15: "MX",
             16: "TXT",
             28: "AAAA",
-            33: "SRV",
-            252: "AXFR",
-            255: "ANY",
         }
         cls = {1: "IN", 3: "CH", 4: "HS", 255: "ANY"}
         id = self.query["id"]
         for i in self.query["queries"]:
             print(f"Query: ID {id} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
         for i in self.query["answers"]:
-            print(f"Answer: ID {id} {i['name'][:-1]} {typ[i['type']]}")
-            print(f"TTL: {i['ttl']}")
+            print(f"\nAnswer: ID {id} {i['name'][:-1]} {typ[i['type']]}")
+            print(f"    TTL: {i['ttl']}")
             if i["type"] == 15: # MX
-                print(f"{i['pref']} {i['exchange']}")
-            elif i["type"] == 1: # A
-                print(f"  RDATA: {i['rdata']}")
+                print(f"    PRIORITY: {i['pref']} EXECHANGE: {i['exchange']}")
+            elif i["type"] == 1 or i["type"] == 28: # A or AAAA
+                print(f"    RDATA: {i['rdata']}")
             elif i["type"] == 5: # CNAME
-                print(f"  CNAME: {i['cname']}")
+                print(f"    CNAME: {i['cname']}")
             elif i["type"] == 2: # NS
-                print(f"  NS: {i['ns']}")
+                print(f"    NS: {i['ns']}")
             elif i["type"] == 16: # TXT
-                print(f"  TXT: {i['txt']}")
+                print(f"    TXT: {i['txt']}")
+            print("\n")
