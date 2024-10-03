@@ -44,7 +44,7 @@ argp.add_argument(
 argp.add_argument(
 	"--tcp",
 	"-t",
-	default=1,
+	default=0,
     type=int,
 	help="Allow TCP",
 	choices=[1, 0],
