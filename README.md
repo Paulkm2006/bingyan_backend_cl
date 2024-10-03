@@ -60,3 +60,10 @@
 - [x] 可拒绝递归请求
 - [x] 内存cache
 - [x] cache根据ttl自动刷新
+- [x] 可指定不缓存
+- [x] 支持A AAAA MX CNAME TXT NS
+- [x] 支持将缓存保存为文件（使用pickle处理）
+- [x] 支持超时重试
+- [x] udp支持并发（直接使用sendto）
+- [ ] 负载均衡
+- [x] tcp查询

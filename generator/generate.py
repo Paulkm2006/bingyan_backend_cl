@@ -1,11 +1,12 @@
 from random import randint
 
 class DNSGenerator:
-    def __init__(self, domain, type, recursion_desired=True, flag=None):
+    def __init__(self, domain, type, recursion_desired=True, flag=None, protocol="udp"):
         self.domain = domain
         self.type = type
         self.rec = recursion_desired
         self.flag = flag
+        self.protocol = protocol
         self.generate()
 
     def encode_data(self, data):
@@ -34,4 +35,7 @@ class DNSGenerator:
         query += b"\x00" # end of domain
         query += bytes.fromhex(f'{self.type:0{4}x}'.format())  # type
         query += b"\x00\x01"
+        if self.protocol == "tcp":
+            length = len(query)
+            query = bytes([length >> 8, length & 0xFF]) + query
         self.query = query

@@ -5,21 +5,21 @@ from server.tcp import TCPServer
 from server.udp import UDPServer
 
 def load_config():
-	with open("server_conf.yaml", "r") as f:
-		return yaml.safe_load(f)
+    with open("server_conf.yaml", "r") as f:
+        return yaml.safe_load(f)
 
 def main():
 
-	config = load_config()
-	
-	if config["type"] == "tcp":
-		server = TCPServer(config)
-	elif config["type"] == "udp":
-		server = UDPServer(config)
-	else:
-		raise ValueError("Invalid server type")
-	for i in server.run():
-		pass
+    config = load_config()
+    
+    if config["type"] == "tcp":
+        server = TCPServer(config)
+    elif config["type"] == "udp":
+        server = UDPServer(config)
+    else:
+        raise ValueError("Invalid server type")
+    for i in server.run():
+        pass
 
 if __name__ == "__main__":
-	main()
+    main()
