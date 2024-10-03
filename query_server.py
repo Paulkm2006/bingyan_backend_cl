@@ -77,6 +77,8 @@ def main():
                     cached = cache.get((data.query['queries'][0]["name"], data.query['queries'][0]["type"]))
                     if cached:
                         ret = bytes.fromhex(data.query['id'])+cached
+                        if protocol == "tcp":
+                            ret = len(ret).to_bytes(2, byteorder="big") + ret
                     else:
                         if protocol == "tcp":
                             ret_raw = DNSResult(q[2:], protocol=protocol)
@@ -108,8 +110,6 @@ def main():
                         print(f"Error: Socket error {ret_raw.answer}")
                         continue
                     ret = ret_raw.answer
-            if protocol == "tcp":
-                ret = len(ret).to_bytes(2, byteorder="big") + ret
             if protocol == "tcp":
                 client.send(ret)
             else:
