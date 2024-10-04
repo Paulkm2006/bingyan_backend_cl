@@ -127,18 +127,6 @@ class DNSQuery:
                         "ns": ns,
                     }
                 )
-            elif typ == 5: # CNAME
-                cname = self.decode_data(query)
-                ret["answers"].append(
-                    {
-                        "name": qname,
-                        "type": typ,
-                        "class": cls,
-                        "ttl": ttl,
-                        "rdlength": rdlength,
-                        "cname": cname,
-                    }
-                )
             elif typ == 15: # MX
                 pref = int(query[self.cur : self.cur + 4], 16)
                 self.cur+=4
@@ -217,7 +205,47 @@ class DNSQuery:
                         "rdlength": rdlength,
                         "raw": query[self.cur : self.cur + rdlength*2],
                     })
-
+        ret["authorities"] = []
+        for i in range(ret["nscount"]):
+            ptr, offset = self.is_ptr(query[self.cur : self.cur + 4])
+            if ptr:
+                self.cur += 4
+                name = self.decode_data_offset(query, offset)
+            else:
+                name = self.decode_data(query)
+                self.cur += 2
+            typ = int(query[self.cur : self.cur + 4], 16)
+            self.cur += 4
+            cls = int(query[self.cur : self.cur + 4], 16)
+            self.cur += 4
+            ttl = int(query[self.cur : self.cur + 8], 16)
+            self.cur += 8
+            rdlength = int(query[self.cur : self.cur + 4], 16)
+            self.cur += 4
+            if typ == 2: # NS
+                ns = self.decode_data(query)
+                ret["authorities"].append(
+                    {
+                        "name": name,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "ns": ns,
+                    }
+                )
+            elif typ == 6:  # SOA (CNAME response)
+                mname = self.decode_data(query)
+                ret["authorities"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "mname": mname,
+                    }
+                )
         return ret
 
     def query_info(self):
@@ -225,6 +253,7 @@ class DNSQuery:
             1: "A",
             2: "NS",
             5: "CNAME",
+            6: "SOA",
             15: "MX",
             16: "TXT",
             28: "AAAA",
@@ -259,9 +288,14 @@ class DNSQuery:
                 print(f"    PRIORITY: {i['pref']} EXECHANGE: {i['exchange']}")
             elif t == 1 or i["type"] == 28: # A or AAAA
                 print(f"    RDATA: {i['rdata']}")
-            elif t == 5: # CNAME
-                print(f"    CNAME: {i['cname']}")
             elif t == 2: # NS
                 print(f"    NS: {i['ns']}")
             elif t == 16: # TXT
                 print(f"    TXT: {i['txt']}")
+        for i in self.query["authorities"]:
+            print(f"\nAuthority: ID {id} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}")
+            print(f"    TTL: {i['ttl']}")
+            if i["type"] == 2:
+                print(f"    NS: {i['ns']}")
+            elif i["type"] == 6:
+                print(f"    MNAME: {i['mname']}")

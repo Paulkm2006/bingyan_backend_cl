@@ -15,11 +15,11 @@ argp.add_argument(
     type=int,
 )
 argp.add_argument(
-    "--recursion",
-    "-r",
-    default=True,
-    help="Recursion supported",
-    choices=[True, False],
+    "--no-recursion",
+    "-nr",
+    dest="recursion",
+    action="store_false",
+    help="Disable iterative mode",
 )
 argp.add_argument(
     "--listen",
@@ -30,24 +30,19 @@ argp.add_argument(
 argp.add_argument(
     "--cache",
     "-c",
-    default=1,
-    type=int,
+    action="store_true",
     help="Cache responses",
-    choices=[1, 0],
 )
 argp.add_argument(
     "--cache-file",
     "-f",
     help="Cache file",
-    nargs='?',
 )
 argp.add_argument(
 	"--tcp",
 	"-t",
-	default=0,
-    type=int,
+	action="store_true",
 	help="Allow TCP",
-	choices=[1, 0],
 )
 
 def main():
@@ -102,7 +97,7 @@ def main():
                                 query_ans["queries"][0]["type"],
                             ),
                             ret_save,
-                            ttl,
+                            ttl,0
                         )
                 else:
                     ret_raw = DNSResult(q, protocol=protocol)
