@@ -113,6 +113,7 @@ class DNSQuery:
                         "ttl": ttl,
                         "rdlength": rdlength,
                         "rdata": rdata[:-1],
+                        "data": rdata[:-1],
                     }
                 )
             elif typ == 2: # NS
@@ -125,6 +126,7 @@ class DNSQuery:
                         "ttl": ttl,
                         "rdlength": rdlength,
                         "ns": ns,
+                        "data": ns
                     }
                 )
             elif typ == 15: # MX
@@ -140,8 +142,10 @@ class DNSQuery:
                         "rdlength": rdlength,
                         "pref": pref,
                         "exchange": exchange,
+                        "data": str(pref) + " " + exchange,
                     }
                 )
+                self.cur += 2
             elif typ == 28: # AAAA
                 short = False
                 rdata = ""
@@ -171,6 +175,7 @@ class DNSQuery:
                         "rdlength": rdlength,
                         "rdata_orig": rdata_orig[:-1],
                         "rdata": rdata[:-1],
+                        "data": rdata[:-1],
                     }
                 )
             elif typ == 16: # TXT
@@ -194,6 +199,7 @@ class DNSQuery:
                         "ttl": ttl,
                         "rdlength": rdlength,
                         "txt": txt,
+                        "data": " ".join(txt),
                     })
             else:
                 ret["answers"].append(
@@ -232,6 +238,7 @@ class DNSQuery:
                         "ttl": ttl,
                         "rdlength": rdlength,
                         "ns": ns,
+                        "data": ns
                     }
                 )
             elif typ == 6:  # SOA (CNAME response)
@@ -244,6 +251,7 @@ class DNSQuery:
                         "ttl": ttl,
                         "rdlength": rdlength,
                         "mname": mname,
+                        "data": mname
                     }
                 )
         return ret
