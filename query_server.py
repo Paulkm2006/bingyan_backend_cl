@@ -1,10 +1,11 @@
-from decoder.fetch_data import *
-from decoder.process_query import *
-from generator.generate import *
-from cache import *
-from server.udp import UDPServer
-from server.tcp import TCPServer
 import argparse
+
+from cache import Cache
+from decoder.fetch_data import DNSResult
+from decoder.process_query import DNSQuery
+from generator.generate import DNSGenerator
+from server.tcp import TCPServer
+from server.udp import UDPServer
 
 argp = argparse.ArgumentParser()
 argp.add_argument(
@@ -24,7 +25,7 @@ argp.add_argument(
 argp.add_argument(
     "--listen",
     "-l",
-    default='127.0.0.1',
+    default="127.0.0.1",
     help="Listen address",
 )
 argp.add_argument(
@@ -39,11 +40,12 @@ argp.add_argument(
     help="Cache file",
 )
 argp.add_argument(
-	"--tcp",
-	"-t",
-	action="store_true",
-	help="Allow TCP",
+    "--tcp",
+    "-t",
+    action="store_true",
+    help="Allow TCP",
 )
+
 
 def main():
     args = argp.parse_args()
@@ -64,14 +66,23 @@ def main():
             data = DNSQuery(q, protocol)
             if (not args.recursion) and (data.query["flags"]["rd"]):
                 ret_raw = DNSGenerator(
-                    data.query["name"], data.query["type"], args.recursion, "8100", protocol
+                    data.query["name"],
+                    data.query["type"],
+                    args.recursion,
+                    "8100",
+                    protocol,
                 )
                 ret = ret_raw.query
             else:
                 if args.cache:
-                    cached = cache.get((data.query['queries'][0]["name"], data.query['queries'][0]["type"]))
+                    cached = cache.get(
+                        (
+                            data.query["queries"][0]["name"],
+                            data.query["queries"][0]["type"],
+                        )
+                    )
                     if cached:
-                        ret = bytes.fromhex(data.query['id'])+cached
+                        ret = bytes.fromhex(data.query["id"]) + cached
                         if protocol == "tcp":
                             ret = len(ret).to_bytes(2, byteorder="big") + ret
                     else:
@@ -85,8 +96,8 @@ def main():
                         ret = ret_raw.answer
                         ttl = int(1e9)
                         query_ans = DNSQuery(ret, protocol=protocol).query
-                        for t in query_ans['answers']:
-                            ttl = min(t['ttl'], ttl)
+                        for t in query_ans["answers"]:
+                            ttl = min(t["ttl"], ttl)
                         if protocol == "tcp":
                             ret_save = ret[4:]
                         else:
@@ -97,7 +108,8 @@ def main():
                                 query_ans["queries"][0]["type"],
                             ),
                             ret_save,
-                            ttl,0
+                            ttl,
+                            0,
                         )
                 else:
                     ret_raw = DNSResult(q, protocol=protocol)
@@ -114,6 +126,7 @@ def main():
     if args.cache and args.cache_file:
         cache.save(args.cache_file)
     server.sock.close()
+
 
 if __name__ == "__main__":
     main()

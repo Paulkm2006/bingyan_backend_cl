@@ -74,12 +74,12 @@
 
 
 ## Task5 提高
-- ✅ udp支持并发（直接使用sendto）
 - ✅ 支持A AAAA MX CNAME TXT NS
 - ✅ tcp查询
 - ✅ 支持将缓存保存为文件（使用pickle处理）
 - ✅ 支持重试、错误
 - ❌ 负载均衡
+- ❌ 并发
 
 
 ## Task6 基础

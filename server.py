@@ -5,7 +5,7 @@ from server.tcp import TCPServer
 from server.udp import UDPServer
 
 def load_config():
-    with open("server_conf.yaml", "r") as f:
+    with open("server_conf.yaml", "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 def main():
@@ -18,7 +18,7 @@ def main():
         server = UDPServer(config)
     else:
         raise ValueError("Invalid server type")
-    for i in server.run():
+    for _ in server.run():
         pass
 
 if __name__ == "__main__":

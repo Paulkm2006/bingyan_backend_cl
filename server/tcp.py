@@ -12,7 +12,7 @@ class TCPServer():
         self.sock.settimeout(1)
         while True:
             try:
-                client, addr = self.sock.accept()
+                client, _ = self.sock.accept()
                 data = client.recv(1024)
                 yield data, client
             except socket.timeout:

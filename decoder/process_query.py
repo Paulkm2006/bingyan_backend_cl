@@ -8,9 +8,9 @@ class DNSQuery:
         self.cur = 24
         self.query = self.decode_query()
 
-    def is_ptr(self, hex):
+    def is_ptr(self, data):
         ptr = bitarray.bitarray()
-        ptr.frombytes(bytes.fromhex(hex))
+        ptr.frombytes(bytes.fromhex(data))
         if ptr[0] == 1 and ptr[1] == 1:
             offset = int(ptr[2:].to01(), 2)*2
             return True, offset
@@ -77,14 +77,14 @@ class DNSQuery:
         ret["nscount"] = int(query[16:20], 16)
         ret["arcount"] = int(query[20:24], 16)
         ret["queries"] = []
-        for i in range(ret["qdcount"]):
+        for _ in range(ret["qdcount"]):
             qname = self.decode_data(query)
             typ = int(query[self.cur + 2 : self.cur + 6], 16)
             cls = int(query[self.cur + 6 : self.cur + 10], 16)
             ret["queries"].append({"name": qname, "type": typ, "class": cls})
             self.cur += 10
         ret["answers"] = []
-        for i in range(ret["ancount"]):
+        for _ in range(ret["ancount"]):
             ptr, offset = self.is_ptr(query[self.cur : self.cur + 4])
             if ptr:
                 self.cur += 4
@@ -102,7 +102,7 @@ class DNSQuery:
             self.cur+=4
             if typ == 1: # A
                 rdata = ""
-                for j in range(rdlength):
+                for __ in range(rdlength):
                     rdata += str(int(query[self.cur : self.cur + 2], 16))+"."
                     self.cur += 2
                 ret["answers"].append(
@@ -150,7 +150,7 @@ class DNSQuery:
                 short = False
                 rdata = ""
                 rdata_orig = ""
-                for i in range(8):
+                for __ in range(8):
                     rdata_orig += query[self.cur : self.cur + 4] + ":"
                     chunk = query[self.cur : self.cur + 4]
                     if chunk == "0000":
@@ -201,6 +201,19 @@ class DNSQuery:
                         "txt": txt,
                         "data": " ".join(txt),
                     })
+            elif typ == 6: # CNAME
+                cname = self.decode_data(query)
+                ret["answers"].append(
+                    {
+                        "name": qname,
+                        "type": typ,
+                        "class": cls,
+                        "ttl": ttl,
+                        "rdlength": rdlength,
+                        "cname": cname,
+                        "data": cname
+                    }
+                )
             else:
                 ret["answers"].append(
                     {
@@ -212,7 +225,7 @@ class DNSQuery:
                         "raw": query[self.cur : self.cur + rdlength*2],
                     })
         ret["authorities"] = []
-        for i in range(ret["nscount"]):
+        for _ in range(ret["nscount"]):
             ptr, offset = self.is_ptr(query[self.cur : self.cur + 4])
             if ptr:
                 self.cur += 4
@@ -241,7 +254,7 @@ class DNSQuery:
                         "data": ns
                     }
                 )
-            elif typ == 6:  # SOA (CNAME response)
+            elif typ == 6:  # SOA
                 mname = self.decode_data(query)
                 ret["authorities"].append(
                     {
@@ -267,9 +280,9 @@ class DNSQuery:
             28: "AAAA",
         }
         cls = {1: "IN", 3: "CH", 4: "HS", 255: "ANY"}
-        id = self.query["id"]
+        qid = self.query["id"]
         for i in self.query["queries"]:
-            print(f"Query: ID {id} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
+            print(f"Query: ID {qid} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
         if self.query["flags"]["rcode"] != '0000':
             err_map = {
                 "0001": "Format error",
@@ -279,17 +292,17 @@ class DNSQuery:
                 "0101": "Refused",
             }
             print(
-                f"\nError: ID {id} Protocol {self.protocol} {err_map[self.query['flags']['rcode']]}"
+                f"\nError: ID {qid} Protocol {self.protocol} {err_map[self.query['flags']['rcode']]}"
             )
             return
         for i in self.query["answers"]:
             try:
                 t = i["type"]
             except ValueError:
-                print(f"Error: ID {id} Protocol {self.protocol} Invalid type {t}")
+                print(f"Error: ID {qid} Protocol {self.protocol} Invalid type {i['type']}")
                 continue
             print(
-                f"\nAnswer: ID {id} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}"
+                f"\nAnswer: ID {qid} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}"
             )
             print(f"    TTL: {i['ttl']}")
             if t == 15: # MX
@@ -300,8 +313,10 @@ class DNSQuery:
                 print(f"    NS: {i['ns']}")
             elif t == 16: # TXT
                 print(f"    TXT: {i['txt']}")
+            elif t == 6: # CNAME
+                print(f"    CNAME: {i['cname']}")
         for i in self.query["authorities"]:
-            print(f"\nAuthority: ID {id} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}")
+            print(f"\nAuthority: ID {qid} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}")
             print(f"    TTL: {i['ttl']}")
             if i["type"] == 2:
                 print(f"    NS: {i['ns']}")

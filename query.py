@@ -1,7 +1,9 @@
-from decoder.fetch_data import *
-from generator.generate import *
-from cache import *
 import argparse
+
+from cache import Cache
+from decoder.fetch_data import DNSResult
+from decoder.process_query import DNSQuery
+from generator.generate import DNSGenerator
 
 root_server = "a.root-servers.net"  # ICAAN
 
@@ -47,7 +49,7 @@ typ = {
 
 
 def interactive():
-    help = [
+    help_info = [
         ("show", "show <history/like/rank/config>"),
         ("clear", "clear <history/like>"),
         (
@@ -88,7 +90,7 @@ def interactive():
                 return
             elif cmd[0] == "help":
                 print("Available commands:")
-                for i in help:
+                for i in help_info:
                     print("Command:", i[0], "\tDescription:", i[1])
             elif cmd[0] == "show":
                 if cmd[1] == "history":
@@ -198,11 +200,11 @@ def cli():
     cache.save(args.cache_file)
 
 
-def query(c, data_orig, type, recursion, server, port, protocol, like):
+def query(c, data_orig, query_type, recursion, server, port, protocol, like):
     if recursion:
-        data = DNSGenerator(data_orig, typ[type], recursion)
-        query = data.query
-        ret_raw = DNSResult(query, server, port, protocol)
+        data = DNSGenerator(data_orig, typ[query_type], recursion)
+        query_data = data.query
+        ret_raw = DNSResult(query_data, server, port, protocol)
         if ret_raw.status == -1:
             print(f"Error: Socket error {ret_raw.answer}")
             return
@@ -210,7 +212,7 @@ def query(c, data_orig, type, recursion, server, port, protocol, like):
         ret.query_info()
     else:
         serv = root_server
-        query = DNSGenerator(data_orig, typ[type], 0).query
+        query_data = DNSGenerator(data_orig, typ[query_type], 0).query
         while True:
             print(f"Redirecting to {serv}")
             query_ns = DNSGenerator(serv, 1, 1).query
@@ -220,7 +222,7 @@ def query(c, data_orig, type, recursion, server, port, protocol, like):
                 return
             ns = DNSQuery(ret_ns.answer, protocol)
             ns = ns.query["answers"][0]["rdata"]
-            ret = DNSResult(query, ns, 53, protocol)
+            ret = DNSResult(query_data, ns, 53, protocol)
             if ret.status == -1:
                 print(f"Error: Socket error {ret.answer}")
                 return

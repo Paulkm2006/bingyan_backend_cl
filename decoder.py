@@ -1,12 +1,12 @@
-from decoder.process_query import *
-from decoder.fetch_data import *
-from generator.generate import *
+from decoder.process_query import DNSQuery
+from decoder.fetch_data import DNSResult
+from generator.generate import DNSGenerator
 
 def recv(q):
-    query = DNSQuery(q)
+    # query = DNSQuery(q)
     # query.query_info()
     data = DNSResult(q, protocol="tcp", addr="223.5.5.5")
-    data_decoded = DNSQuery(data.answer, tcp=True)
+    data_decoded = DNSQuery(data.answer)
     data_decoded.query_info()
 
 

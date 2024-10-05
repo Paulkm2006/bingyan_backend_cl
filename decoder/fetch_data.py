@@ -1,6 +1,5 @@
 from client.udp import UDPClient
 from client.tcp import TCPClient
-from .process_query import DNSQuery
 
 class DNSResult():
 

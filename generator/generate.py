@@ -1,9 +1,9 @@
 from random import randint
 
 class DNSGenerator:
-    def __init__(self, domain, type, recursion_desired=True, flag=None, protocol="udp"):
+    def __init__(self, domain, typ, recursion_desired=True, flag=None, protocol="udp"):
         self.domain = domain
-        self.type = type
+        self.type = typ
         self.rec = recursion_desired
         self.flag = flag
         self.protocol = protocol
@@ -20,6 +20,7 @@ class DNSGenerator:
         self.id = randint(0, 65535)
         query += bytes.fromhex(f"{self.id:0{4}x}".format())
         self.id = f"{self.id:0{4}x}".format()
+        flags = ""
         if self.flag:
             flags += self.flag
         else:
