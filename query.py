@@ -1,11 +1,11 @@
+"""DNS query tool"""
+
 import argparse
 
 from cache import Cache
 from decoder.fetch_data import DNSResult
 from decoder.process_query import DNSQuery
 from generator.generate import DNSGenerator
-
-root_server = "a.root-servers.net"  # ICAAN
 
 argp = argparse.ArgumentParser()
 argp.add_argument(
@@ -49,6 +49,7 @@ typ = {
 
 
 def interactive():
+    """Interactive mode"""
     help_info = [
         ("show", "show <history/like/rank/config>"),
         ("clear", "clear <history/like>"),
@@ -58,7 +59,8 @@ def interactive():
         ),
         (
             "set",
-            "set <server/port/protocol/cache/cache_file/iterative> <value>\n\tNote that bool value should be represented as 1/0",
+            "set <server/port/protocol/cache/cache_file/iterative> <value>\n \
+                \tNote that bool value should be represented as 1/0",
         ),
         ("exit", "Exit the cli"),
         ("help", "show help info"),
@@ -88,7 +90,7 @@ def interactive():
                     cache.save(conf["cache_file"])
                 print("Exiting...")
                 return
-            elif cmd[0] == "help":
+            if cmd[0] == "help":
                 print("Available commands:")
                 for i in help_info:
                     print("Command:", i[0], "\tDescription:", i[1])
@@ -106,7 +108,7 @@ def interactive():
                         print(i[0], "with type", i[1], "\t\thit", cache.cache[i][2])
                 elif cmd[1] == "config":
                     print("Current configuration:\n")
-                    for i in conf:
+                    for i in conf.items():
                         print(i, ":", conf[i])
                 else:
                     print("Invalid command")
@@ -157,6 +159,7 @@ def interactive():
 
 
 def cli():
+    """Command line interface"""
     try:
         if args.data == "history":
             cache.load(args.cache_file)
@@ -201,6 +204,7 @@ def cli():
 
 
 def query(c, data_orig, query_type, recursion, server, port, protocol, like):
+    """Query operation"""
     if recursion:
         data = DNSGenerator(data_orig, typ[query_type], recursion)
         query_data = data.query
@@ -211,7 +215,7 @@ def query(c, data_orig, query_type, recursion, server, port, protocol, like):
         ret = DNSQuery(ret_raw.answer, args.protocol)
         ret.query_info()
     else:
-        serv = root_server
+        serv = "a.root-servers.net"
         query_data = DNSGenerator(data_orig, typ[query_type], 0).query
         while True:
             print(f"Redirecting to {serv}")

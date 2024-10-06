@@ -1,6 +1,8 @@
+"""Generate DNS query packets."""
 from random import randint
 
 class DNSGenerator:
+    """Generate DNS query packets."""
     def __init__(self, domain, typ, recursion_desired=True, flag=None, protocol="udp"):
         self.domain = domain
         self.type = typ
@@ -10,12 +12,14 @@ class DNSGenerator:
         self.generate()
 
     def encode_data(self, data):
+        """Encode data to hex."""
         encoded = ""
         for i in data:
             encoded += hex(ord(i))[2:]
         return encoded
 
     def generate(self):
+        """Generate DNS query."""
         query = b""
         self.id = randint(0, 65535)
         query += bytes.fromhex(f"{self.id:0{4}x}".format())

@@ -1,8 +1,10 @@
+"""Receive DNS query and decode it."""
 from decoder.process_query import DNSQuery
 from decoder.fetch_data import DNSResult
 from generator.generate import DNSGenerator
 
 def recv(q):
+    """Receive DNS query"""
     # query = DNSQuery(q)
     # query.query_info()
     data = DNSResult(q, protocol="tcp", addr="223.5.5.5")
@@ -11,6 +13,7 @@ def recv(q):
 
 
 def main():
+    """Main function."""
     # config = {
     #     "host": "127.0.0.1",
     #     "port": 530,

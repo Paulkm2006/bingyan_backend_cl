@@ -1,3 +1,4 @@
+"""Server to accept, decode and forward DNS queries."""
 import argparse
 
 from cache import Cache
@@ -48,6 +49,7 @@ argp.add_argument(
 
 
 def main():
+    """Main function."""
     args = argp.parse_args()
     if args.tcp:
         server = TCPServer({"host": args.listen, "port": args.port, "backlog": 5})

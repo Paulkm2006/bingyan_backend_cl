@@ -1,7 +1,9 @@
+"""Decodes DNS query packets and prints the information in a human-readable format."""
 import bitarray
 
 
 class DNSQuery:
+    """Decodes DNS query packets and prints the information in a human-readable format."""
     def __init__(self, q, protocol="udp"):
         self.query_raw = q
         self.protocol = protocol
@@ -9,6 +11,7 @@ class DNSQuery:
         self.query = self.decode_query()
 
     def is_ptr(self, data):
+        """Check if the data is a pointer."""
         ptr = bitarray.bitarray()
         ptr.frombytes(bytes.fromhex(data))
         if ptr[0] == 1 and ptr[1] == 1:
@@ -16,6 +19,7 @@ class DNSQuery:
             return True, offset
         return False, 0
     def decode_data_offset(self, query, offset):
+        """Decode data starting from offset."""
         data = ""
         while True:
             length = int(query[offset : offset + 2], 16)
@@ -26,15 +30,15 @@ class DNSQuery:
                 offset += 4
                 data += self.decode_data_offset(query, offset_n)
                 break
-            else:
-                while length > 0:
-                    offset += 2
-                    data += chr(int(query[offset : offset + 2], 16))
-                    length -= 1
-                offset+=2
-                data += "."
+            while length > 0:
+                offset += 2
+                data += chr(int(query[offset : offset + 2], 16))
+                length -= 1
+            offset+=2
+            data += "."
         return data
     def decode_data(self, query):
+        """Decode data from the cursor."""
         data = ""
         while True:
             length = int(query[self.cur : self.cur + 2], 16)
@@ -54,6 +58,7 @@ class DNSQuery:
                 data += "."
         return data
     def decode_query(self):
+        """Decode the query."""
         query = self.query_raw.hex()
         ret = {}
         if self.protocol == "tcp":
@@ -270,6 +275,7 @@ class DNSQuery:
         return ret
 
     def query_info(self):
+        """Print the query information."""
         typ = {
             1: "A",
             2: "NS",
@@ -282,7 +288,8 @@ class DNSQuery:
         cls = {1: "IN", 3: "CH", 4: "HS", 255: "ANY"}
         qid = self.query["id"]
         for i in self.query["queries"]:
-            print(f"Query: ID {qid} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
+            print(f"Query: ID {qid} Protocol {self.protocol} \
+                    {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
         if self.query["flags"]["rcode"] != '0000':
             err_map = {
                 "0001": "Format error",
@@ -291,9 +298,8 @@ class DNSQuery:
                 "0100": "Not implemented",
                 "0101": "Refused",
             }
-            print(
-                f"\nError: ID {qid} Protocol {self.protocol} {err_map[self.query['flags']['rcode']]}"
-            )
+            print(f"\nError: ID {qid} Protocol {self.protocol} \
+                {err_map[self.query['flags']['rcode']]}")
             return
         for i in self.query["answers"]:
             try:
@@ -316,7 +322,8 @@ class DNSQuery:
             elif t == 6: # CNAME
                 print(f"    CNAME: {i['cname']}")
         for i in self.query["authorities"]:
-            print(f"\nAuthority: ID {qid} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}")
+            print(f"\nAuthority: ID {qid} Protocol {self.protocol} \
+                  {i['name'][:-1]} {typ[i['type']]}")
             print(f"    TTL: {i['ttl']}")
             if i["type"] == 2:
                 print(f"    NS: {i['ns']}")
