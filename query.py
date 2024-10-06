@@ -236,7 +236,7 @@ def query(c, data_orig, query_type, recursion, server, port, protocol, like):
                 break
             serv = ret.query["authorities"][0]["ns"][:-1]
     if c:
-        cached = cache.get((data_orig, type))
+        cached = cache.get((data_orig, typ[query_type]))
         purged = []
         ttl = int(1e9)
         for i in ret.query["answers"]:
@@ -257,7 +257,7 @@ def query(c, data_orig, query_type, recursion, server, port, protocol, like):
             else:
                 print("Cache hit with no diff")
                 return
-        cache.set((data_orig, type), purged, ttl, like)
+        cache.set((data_orig, typ[query_type]), purged, ttl, like)
 
 
 if __name__ == "__main__":

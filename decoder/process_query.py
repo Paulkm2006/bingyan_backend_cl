@@ -49,13 +49,12 @@ class DNSQuery:
                 self.cur += 4
                 data += self.decode_data_offset(query, offset)
                 break
-            else:
-                while length > 0:
-                    self.cur += 2
-                    data += chr(int(query[self.cur : self.cur + 2], 16))
-                    length -= 1
-                self.cur+=2
-                data += "."
+            while length > 0:
+                self.cur += 2
+                data += chr(int(query[self.cur : self.cur + 2], 16))
+                length -= 1
+            self.cur+=2
+            data += "."
         return data
     def decode_query(self):
         """Decode the query."""
@@ -150,7 +149,6 @@ class DNSQuery:
                         "data": str(pref) + " " + exchange,
                     }
                 )
-                self.cur += 2
             elif typ == 28: # AAAA
                 short = False
                 rdata = ""
@@ -288,8 +286,7 @@ class DNSQuery:
         cls = {1: "IN", 3: "CH", 4: "HS", 255: "ANY"}
         qid = self.query["id"]
         for i in self.query["queries"]:
-            print(f"Query: ID {qid} Protocol {self.protocol} \
-                    {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
+            print(f"Query: ID {qid} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]} {cls[i['class']]}")
         if self.query["flags"]["rcode"] != '0000':
             err_map = {
                 "0001": "Format error",
@@ -298,8 +295,7 @@ class DNSQuery:
                 "0100": "Not implemented",
                 "0101": "Refused",
             }
-            print(f"\nError: ID {qid} Protocol {self.protocol} \
-                {err_map[self.query['flags']['rcode']]}")
+            print(f"\nError: ID {qid} Protocol {self.protocol} {err_map[self.query['flags']['rcode']]}")
             return
         for i in self.query["answers"]:
             try:
@@ -322,8 +318,7 @@ class DNSQuery:
             elif t == 6: # CNAME
                 print(f"    CNAME: {i['cname']}")
         for i in self.query["authorities"]:
-            print(f"\nAuthority: ID {qid} Protocol {self.protocol} \
-                  {i['name'][:-1]} {typ[i['type']]}")
+            print(f"\nAuthority: ID {qid} Protocol {self.protocol} {i['name'][:-1]} {typ[i['type']]}")
             print(f"    TTL: {i['ttl']}")
             if i["type"] == 2:
                 print(f"    NS: {i['ns']}")
