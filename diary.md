@@ -23,7 +23,7 @@ TCP请求在头部增添了2字节的总长度标签
 
 	解码为二进制后用来标记请求，具体各个标记的意义如下表
 
-	![](https://p.sda1.dev/19/997c5df0220aeb5e85c8d4cb2a236b74/image.png)
+![](https://p.sda1.dev/19/997c5df0220aeb5e85c8d4cb2a236b74/image.png)
 	
 	具体需要关注的有：
 		
