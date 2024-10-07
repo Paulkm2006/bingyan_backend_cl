@@ -109,7 +109,7 @@ def interactive():
                 elif cmd[1] == "config":
                     print("Current configuration:\n")
                     for i in conf.items():
-                        print(i, ":", conf[i])
+                        print(i[0], ":", i[1])
                 else:
                     print("Invalid command")
             elif cmd[0] == "clear":
@@ -164,12 +164,12 @@ def cli():
         if args.data == "history":
             cache.load(args.cache_file)
             for i in cache.cache:
-                print(i)
+                print(i[0], "with type", i[1])
             return
         elif args.data == "like":
             cache.load(args.cache_file)
             for i in cache.like:
-                print(i)
+                print(i[0], "with type", i[1])
             return
         elif args.data == "clear":
             cache.load(args.cache_file)
@@ -180,7 +180,7 @@ def cli():
         elif args.data == "rank":
             cache.load(args.cache_file)
             for i in sorted(cache.cache, key=lambda x: cache.cache[x][2], reverse=True):
-                print(i[0], "with hits", cache.cache[i][2])
+                print(i[0], "with type", i[1], "\t\thit", cache.cache[i][2])
             return
     except FileNotFoundError:
         print("Cache file not found")
@@ -212,7 +212,7 @@ def query(c, data_orig, query_type, recursion, server, port, protocol, like):
         if ret_raw.status == -1:
             print(f"Error: Socket error {ret_raw.answer}")
             return
-        ret = DNSQuery(ret_raw.answer, args.protocol)
+        ret = DNSQuery(ret_raw.answer, protocol)
         ret.query_info()
     else:
         serv = "a.root-servers.net"
