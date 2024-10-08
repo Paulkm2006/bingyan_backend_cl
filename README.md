@@ -15,6 +15,38 @@
 
 [开发日志](diary.md)
 
+## 文件说明
+
+```bash
+.
+├── cache
+│   └── __init__.py # dns查询缓存模块
+├── client
+│   ├── __init__.py # socket客户端模块init，空
+│   ├── tcp.py # tcp客户端模块
+│   └── udp.py # udp客户端模块
+├── decoder
+│   ├── __init__.py # dns查询解码模块init，空
+│   ├── fetch_data.py # 发送查询模块，将请求转发到dns服务器，并返回结果
+│   └── process_query.py # 解码查询模块，将二进制解码为人类可读
+├── generator
+│   └── generate.py # dns查询生成模块
+├── server
+│   ├── __init__.py # socket服务端模块init，空
+│   ├── tcp.py # tcp服务端模块
+│   └── udp.py # udp服务端模块
+├── README.md # 本文件
+├── cache.pickle # 查询缓存
+├── client.py # socket客户端
+├── diary.md # 开发日志
+├── query.py # dns查询器，支持命令传参/cli使用
+├── query_server.py # dns服务器
+├── requirements.txt # 依赖库
+├── server.py # socket服务端
+├── server_conf.yaml # socket服务端配置
+└── task2.md # task2
+```
+
 
 ## Task1 基础
 - ✅ 简单的client，可自定义协议
